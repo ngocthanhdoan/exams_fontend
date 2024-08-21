@@ -4,9 +4,9 @@
       <fieldset>
         <legend>Version 0.1</legend>
         <p class="mb-5">
-                <span>Swagger is</span>
-                <a href="https:api.devhub.io.vn/swagger-ui.html" target="_blank">available here</a>.
-            </p>
+          <span>Swagger is</span>
+          <a href="https://api.devhub.io.vn/swagger-ui.html" target="_blank">available here</a>.
+        </p>
         <!-- Môn -->
         <div class="mb-3">
           <label for="SubjectSelect" class="form-label">Môn</label>
@@ -39,37 +39,115 @@
       <h2>Đáp án:</h2>
       <ul>
         <li v-for="question in filteredQuestions" :key="question.questionId">
-          {{ question.content }} <code>Đ/A: {{ question.correctOption }}</code>
+          {{ question.content }}
+          <span v-if="isImage(question.correctOption)">
+            <img 
+              :src="question.correctOption" 
+              alt="Correct Option" 
+              class="img-thumbnail" 
+              @click="openModal(question.correctOption)"
+            >
+          </span>
+          <span v-else>
+            <code>Đ/A: {{ question.correctOption }}</code>
+          </span>
         </li>
       </ul>
     </div>
     <div v-else>
       <p>No results found.</p>
     </div>
+
+    <!-- Modal for image zoom -->
+    <div v-if="showModal" class="modal-overlay" @click="closeModal">
+      <div class="modal-content" @click.stop>
+        <img :src="modalImageSrc" alt="Zoomed Image">
+      </div>
+    </div>
   </div>
 </template>
+
+<style scoped>
+.img-thumbnail {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  cursor: pointer;
+  margin-bottom: 10px;
+}
+
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal-content {
+  background: #fff;
+  padding: 20px;
+  border-radius: 8px;
+  max-width: 90%;
+  max-height: 90%;
+  overflow: hidden;
+}
+
+.modal-content img {
+  max-width: 100%;
+  max-height: 80vh;
+}
+</style>
 
 <script>
 export default {
   data() {
     return {
-      subjects: [], // Danh sách môn học
-      exams: [], // Danh sách kỳ thi
-      questions: [], // Danh sách câu hỏi
-      filteredExams: [], // Kỳ thi dựa trên môn học đã chọn
-      selectedSubject: '', // Môn học đã chọn
-      selectedExam: '', // Kỳ thi đã chọn
-      searchQuery: '', // Từ khóa tìm kiếm
+      subjects: [],
+      exams: [],
+      questions: [],
+      filteredExams: [],
+      selectedSubject: '',
+      selectedExam: '',
+      searchQuery: '',
+      showModal: false,
+      modalImageSrc: '',
       url_api: 'https://api.devhub.io.vn/api'
     };
   },
   computed: {
     filteredQuestions() {
-      // Lọc câu hỏi dựa trên từ khóa tìm kiếm và kỳ thi đã chọn
       return this.questions.filter(question => 
         question.content.toLowerCase().includes(this.searchQuery.toLowerCase()) &&
         question.exam === this.selectedExam
       );
+    }
+  },
+  methods: {
+    updateExams() {
+      this.filteredExams = this.exams.filter(exam => exam.subject === this.selectedSubject);
+      this.selectedExam = '';
+      this.updateQuestions();
+    },
+    updateQuestions() {},
+    handleSubmit() {
+      console.log('Form submitted');
+    },
+    isImage(src) {
+      return /\.(jpg|jpeg|png|gif|bmp|webp)$/i.test(src);
+    },
+    openModal(src) {
+      this.modalImageSrc = src;
+      this.showModal = true;
+    },
+    closeModal() {
+      this.showModal = false;
+      this.modalImageSrc = '';
     }
   },
   async created() {
@@ -86,26 +164,10 @@ export default {
       this.exams = await examsResponse.json();
       this.questions = await questionsResponse.json();
       
-      this.updateExams(); // Cập nhật danh sách kỳ thi dựa trên môn học đầu tiên
+      this.updateExams();
     } catch (error) {
       console.error('Error fetching data:', error.message);
-    }
-  },
-  methods: {
-    updateExams() {
-      // Cập nhật danh sách kỳ thi dựa trên môn học đã chọn
-      this.filteredExams = this.exams.filter(exam => exam.subject === this.selectedSubject);
-      this.selectedExam = ''; // Reset kỳ thi đã chọn
-      this.updateQuestions(); // Cập nhật câu hỏi dựa trên kỳ thi mới
-    },
-    updateQuestions() {
-      // Cập nhật danh sách câu hỏi dựa trên kỳ thi đã chọn
-      // Không cần làm gì thêm ở đây vì câu hỏi được lọc trong computed property
-    },
-    handleSubmit() {
-      console.log('Form submitted');
     }
   }
 };
 </script>
- 
